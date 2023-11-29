@@ -54,7 +54,7 @@ float* popMonom(monomialStack** head) {
 
 void printList(float polinom[MAXDEGREE]) {
     for (int i = 0 ; i < MAXDEGREE; i++ ){
-        printf('/f ', polinom[i])
+        printf('/f ', polinom[i]);
     }
 }
 
