@@ -52,7 +52,7 @@ double* pop(struct monomialStack* stack) {
 }
 
 void createMonom(struct monomialStack* stack, double coef, int degree) {
-    double* arr = (double*)malloc((degree+1) * sizeof(double));
+    double* arr = (double*)calloc((degree+1) , sizeof(double));
     if (arr == NULL) {
         fprintf(stderr, "Ошибка выделения памяти\n");
         exit(EXIT_FAILURE);
@@ -125,7 +125,7 @@ int getPriority(char operator) { //Получение приоритетов
 
 
 void performOperation(double* term1, double* term2, char operator, int Degree,  struct monomialStack* stack) { //базовые мат операции 
-    double* result = (double*)malloc(sizeof(double) * (Degree * Degree) +1);
+    double* result = (double*)calloc(sizeof(double),  (Degree * Degree) +1);
     switch (operator) {
         case '+':
             for (int i = 0 ; i < Degree; i++){
@@ -138,13 +138,12 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
         case '-':
             for (int i = 0 ; i < Degree; i++){
                 if (term1[i] != 0 || term2[i] != 0){
-                    result[i] = term2[i] - term1[i];
+                    result[i] = term1[i] - term2[i];
                 }
             }
             push(stack, result);        
             break;
         case '*':
-            result[0] = term1[0] * term2[0];
             for (int i = 0; i < Degree; i++){
                 if(term2[i] == 0){
                     continue;
@@ -154,25 +153,27 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
                         continue;
                     }
                     else{
-                        result[i+j] = term1[j] * term2[i];
+                        result[i+j] = result[i+j] + term1[j] * term2[i];
                     }
                 }
             }
             push(stack, result);        
             break;
         case '/':
-            result[0] = term1[0] * term2[0];
             for (int i = 0; i < Degree; i++){
                 if(term2[i] == 0){
                     continue;
                 }
                 for (int j = 0; j < Degree; j++){
-                    if(term1[j] != 0){ 
-                        result[i-j] = term2[i] / term1[j];
+                    if (term1[j] == 0){
+                        continue;
                     }
+                    else{
+                        result[i-j] = result[i-j] + term2[i] / term1[j];
                     }
                 }
-            push(stack, result);       
+            }
+            push(stack, result);        
             break;
         default:
             printf("неправильное действие");
@@ -249,7 +250,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 100, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
             }
 
             popOperator(&operatorStack); // Удаление '(' из стека
@@ -260,7 +261,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 100, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
             }
 
             appendOperator(&operatorStack, line[i]);
@@ -272,7 +273,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 100, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
     }
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
@@ -300,7 +301,7 @@ int main() {
     free(result);
     return 0; */
 
-    //char expression[7] = {'2', '.', '1', '+' , '2', '.', '1'};
+    //char expression[13] = {'(', '2', 'x', '+', '1' , ')', '*' , '(' , '2', 'x', '+', '1', ')'};
     char expression[100];
 
     printf("Enter a mathematical expression: ");
@@ -312,6 +313,6 @@ int main() {
     for (int i = 0 ; i < 6 ; i++){
         printf("%lf ", result[i]);
     } 
-
+    free(result);
     return 0;
 }
