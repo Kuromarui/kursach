@@ -169,7 +169,7 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
                         continue;
                     }
                     else{
-                        result[i-j] = result[i-j] + term2[i] / term1[j];
+                        result[i-j] = result[i-j] + term1[i] / term2[j];
                     }
                 }
             }
@@ -250,7 +250,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
             }
 
             popOperator(&operatorStack); // Удаление '(' из стека
@@ -261,7 +261,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
             }
 
             appendOperator(&operatorStack, line[i]);
@@ -273,7 +273,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 3, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
     }
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
