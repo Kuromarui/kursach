@@ -187,6 +187,7 @@ double* parsExpression(char* line) { //Парсинг выражения
     struct monomialStack monomsStack; 
     operatorStack* operatorStack = NULL;
     int i;
+    int maxDegree = 2 ;
     int flagX = 0; 
     double operandglobal = 0;
     for (i = 0; i < strlen(line); i++) { //Основной цикл 
@@ -242,6 +243,9 @@ double* parsExpression(char* line) { //Парсинг выражения
             i--;
             createMonom(&monomsStack, operandglobal, power);
             flagX = 0;
+            if (power + 1 > maxDegree){
+                maxDegree = power + 1;
+            }
         }
         
         else if (line[i] == ')') { //если закрывается скобка
@@ -250,7 +254,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
             }
 
             popOperator(&operatorStack); // Удаление '(' из стека
@@ -261,7 +265,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
             }
 
             appendOperator(&operatorStack, line[i]);
@@ -273,7 +277,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , 2, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
     }
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
@@ -310,7 +314,7 @@ int main() {
 
     double* result = parsExpression(expression);
 
-    for (int i = 0 ; i < 6 ; i++){
+    for (int i = 0 ; i < 7 ; i++){
         printf("%lf ", result[i]);
     } 
     free(result);
