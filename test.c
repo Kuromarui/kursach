@@ -51,7 +51,7 @@ double* pop(struct monomialStack* stack) {
 }
 
 void createMonom(struct monomialStack* stack, double coef, int degree) {
-    double* arr = (double*)calloc(sizeof(double) , (10000000));
+    double* arr = (double*)calloc(sizeof(double) , (degree + 2) * (degree + 2));
     if (arr == NULL) {
         fprintf(stderr, "Ошибка выделения памяти\n");
         exit(EXIT_FAILURE);
@@ -150,20 +150,36 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
             push(stack, result);
             break;
         case '/':
-            for (int i = 0; i < Degree; i++) {
-                if (term2[i] != 0){
-                    for (int j = 0; j < Degree; j++) {
-                        if (term1[i] != 0) {
-                            int power = j - i;
-                            if (power >= 0) {
-                                result[power] += term1[j] / term2[i];
-                            }
-                        }
-                    }
+            if (length2 == 0 && term2[0] == 0) {
+                printf("Ошибка: деление на ноль");
+                exit(EXIT_FAILURE);
+            }
+            
+            if (length1 < length2) {
+                printf("Ошибка: степень делителя больше делимого");
+                exit(EXIT_FAILURE);
+            }
+            
+            double* quotient = (double*)calloc(sizeof(double), Degree + 1);
+            double* remainder = (double*)calloc(sizeof(double), Degree + 1);
+            
+            for (int i = length1; i >= length2; i--) {
+                int power = i - length2;
+                double coefficient = term1[i] / term2[length2];
+                quotient[power] = coefficient;
+                
+                for (int j = 0; j <= length2; j++) {
+                    term1[i - j] -= coefficient * term2[length2 - j];
                 }
             }
-            push(stack, result);
-        break;
+            
+            for (int i = 0; i <= length1; i++) {
+                remainder[i] = term1[i];
+            }
+            
+            push(stack, quotient);
+            push(stack, remainder);
+            break;
         default:
             printf("неправильное действие");
             exit(EXIT_FAILURE);
@@ -208,13 +224,15 @@ double* parsExpression(char* line) { //Парсинг выражения
             operandglobal = operand;
             if (decimalCount == 1) // сборка при float 
                 operandglobal /= pow(10, decimalCount);
-            if (line[i + 1] == 'x' && line[i+2] == '^'){
+            
+            else if (line[i + 1] == 'x' && line[i+2] == '^'){
                 flagX = 1;
-                
             }
+
             else if(line[i + 1] == 'x' && line[i+2] != '^'){
                 createMonom(&monomsStack, operandglobal, 1 );
             }
+
             else if(line[i+1] != 'x'){
                 createMonom(&monomsStack, operandglobal, 0);
             }
@@ -270,14 +288,49 @@ double* parsExpression(char* line) { //Парсинг выражения
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
 
+void deleteRaz(char line[]){
+    for (int i = 0 ; i < strlen(line); i++){
+        if (!isRaz(line[i])){
+            line[i] = line[i];
+        }
+        else{
+            line[i] = line[i-1];
+        }
+    }
+}
+
 void resultOutput(double* polinom, int degree){
-    for (int i = degree; i > 0 ; i--){
+    bool isFirstTerm = true; // флаг для определения первого элемента
+    
+    for (int i = degree; i >= 0 ; i--){
         if (polinom[i] != 0){
             if (polinom[i] > 0){
-                printf("+%lfx^%i " , polinom[i], i);
+                if (!isFirstTerm) {
+                    printf("+ ");
+                }
+                else {
+                    isFirstTerm = false;
+                }
+                if (i == 0) {
+                    printf("%lf ", polinom[i]);
+                }
+                else if (i == 1) {
+                    printf("%lfx ", polinom[i]);
+                }
+                else {
+                    printf("%lfx^%i ", polinom[i], i);
+                }
             }
             else{
-                printf("%lfx^%i ", polinom[i], i);
+                if (i == 0) {
+                    printf("%lf ", polinom[i]);
+                }
+                else if (i == 1) {
+                    printf("%lfx ", polinom[i]);
+                }
+                else {
+                    printf("%lfx^%i ", polinom[i], i);
+                }
             }
         }
     }
@@ -312,9 +365,13 @@ int main() {
     printf("Enter a mathematical expression: ");
     fgets(expression, 100, stdin);
     expression[strlen(expression) - 1] = '\0';
-
+    
     double* result = parsExpression(expression);
-    resultOutput(result, 100);
+    /*for (int i = 0; i < 200; i++)
+    {
+        printf("%lf", result[i]);
+    } */
+    resultOutput(result,201);
     free(result);
     return 0;
 }
