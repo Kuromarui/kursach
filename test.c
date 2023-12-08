@@ -211,7 +211,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                     decimalCount++;
                     i++;
                     if (decimalCount > 1) {
-                        printf("Invalid expression");
+                        printf("Неправильное выражение");
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -226,7 +226,13 @@ double* parsExpression(char* line) { //Парсинг выражения
                 operandglobal /= pow(10, decimalCount);
             
             else if (line[i + 1] == 'x' && line[i+2] == '^'){
-                flagX = 1;
+                if (!isdigit(line[i+3])){
+                    fprintf(stderr, "Неправильное выражение");
+                    exit(EXIT_FAILURE);  
+                }
+                else{
+                    flagX = 1;
+                }
             }
 
             else if(line[i + 1] == 'x' && line[i+2] != '^'){
@@ -299,42 +305,46 @@ void deleteRaz(char line[]){
     }
 }
 
-void resultOutput(double* polinom, int degree){
+void resultOutput(double* polinom, int degree) {
     bool isFirstTerm = true; // флаг для определения первого элемента
-    
-    for (int i = degree; i >= 0 ; i--){
-        if (polinom[i] != 0){
-            if (polinom[i] > 0){
-                if (!isFirstTerm) {
+
+    for (int i = degree; i >= 0; i--) {
+        if (polinom[i] != 0) {
+            if (!isFirstTerm) {
+                if (polinom[i] > 0) {
                     printf("+ ");
+                } else {
+                    printf("- ");
                 }
-                else {
-                    isFirstTerm = false;
-                }
-                if (i == 0) {
-                    printf("%lf ", polinom[i]);
-                }
-                else if (i == 1) {
-                    printf("%lfx ", polinom[i]);
-                }
-                else {
-                    printf("%lfx^%i ", polinom[i], i);
+            } else {
+                isFirstTerm = false;
+                if (polinom[i] < 0) {
+                    printf("- ");
                 }
             }
-            else{
-                if (i == 0) {
-                    printf("%lf ", polinom[i]);
-                }
-                else if (i == 1) {
-                    printf("%lfx ", polinom[i]);
-                }
-                else {
-                    printf("%lfx^%i ", polinom[i], i);
-                }
+
+            double absCoef = fabs(polinom[i]);
+            if (i == 0) {
+                printf("%lf ", absCoef);
+            } else if (i == 1) {
+                printf("%lfx ", absCoef);
+            } else {
+                printf("%lfx^%i ", absCoef, i);
             }
         }
     }
 }
+
+void removeRaz(char* str) {
+    int count = 0;
+    for (int i = 0; str[i]; i++) {
+        if (!isRaz(str[i])) {
+            str[count++] = str[i];
+        }
+    }
+    str[count] = '\0';
+}
+
 
 // Пример использования
 int main() {
@@ -364,14 +374,14 @@ int main() {
 
     printf("Enter a mathematical expression: ");
     fgets(expression, 100, stdin);
-    expression[strlen(expression) - 1] = '\0';
+    removeRaz(expression);
     
     double* result = parsExpression(expression);
     /*for (int i = 0; i < 200; i++)
     {
         printf("%lf", result[i]);
     } */
-    resultOutput(result,201);
+    resultOutput(result, 10);
     free(result);
     return 0;
 }
