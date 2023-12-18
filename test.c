@@ -51,7 +51,7 @@ double* pop(struct monomialStack* stack) {
 }
 
 void createMonom(struct monomialStack* stack, double coef, int degree) {
-    double* arr = (double*)calloc(sizeof(double) , maxDegree * 50);
+    double* arr = (double*)calloc(sizeof(double) , maxDegree * 100 + 1);
     if (arr == NULL) {
         printf("Ошибка выделения памяти");
         exit(-1);
@@ -113,16 +113,16 @@ int getPriority(char operator) { //Получение приоритетов
 
 
 
-void performOperation(double* term1, double* term2, char operator, int Degree,  struct monomialStack* stack) { //базовые мат операции 
-    double* result = (double*)calloc(sizeof(double) , (Degree * Degree + 1));
+void performOperation(double* term1, double* term2, char operator, struct monomialStack* stack) { //базовые мат операции 
+    double* result = (double*)calloc(sizeof(double) , maxDegree * 100 + 1);
     int length1, length2;
-     for (int i = Degree * Degree +1; i != -1; i-- ){
+    for (int i = maxDegree * 100 + 1; i != -1; i-- ){
         if (term1[i] != 0 ){
             length1 = i;
             break;
         }
     }
-    for (int i= Degree * Degree +1; i != -1; i-- ){
+    for (int i= maxDegree * 100 + 1; i != -1; i-- ){
         if (term2[i]!= 0){
             length2 = i;
             break;
@@ -130,14 +130,14 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
     }
     switch (operator) {
         case '+':
-            for (int i = 0 ; i < Degree + 1; i++){
-                    result[i] = term1[i] + term2[i];
+            for (int i = 0 ; i < maxDegree + 1; i++){
+                result[i] = term1[i] + term2[i];
             }
             push(stack, result);
             break;
         case '-':
-            for (int i = 0 ; i < Degree + 1; i++){
-                    result[i] = term1[i] - term2[i];
+            for (int i = 0 ; i < maxDegree + 1; i++){
+                result[i] = term1[i] - term2[i];
             }
             push(stack, result);         
             break;
@@ -175,6 +175,29 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
     free(term2);
 }
 
+void findMaxDegree(char* line){
+    bool flag = false;
+    for (int i = 0 ; i < strlen(line); i++){
+        if (line[i] == '^'){
+            flag = true;
+        }
+        else if(flag == true && isdigit(line[i])){
+            int power = 0 ;
+            while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
+                if (line[i] == '.') { // проверка на многоточность 
+                    exit(-1);
+                }
+
+                power = power * 10 + (line[i] - '0'); // сборка числа
+                i++;
+            }
+            i--;
+            maxDegree = power;
+            flag = false;
+        }
+    }
+}
+
 double* parsExpression(char* line) { //Парсинг выражения
     struct monomialStack monomsStack; 
     operatorStack* operatorStack = NULL;
@@ -187,6 +210,10 @@ double* parsExpression(char* line) { //Парсинг выражения
             continue;
         else if (line[i] == '(') { //при скобке добавляем её в стек операторов
             appendOperator(&operatorStack, line[i]);
+            if(line[i-1] == '/'){
+                printf("Деление на многочлен");
+                exit(-1);
+            }
         }
         else if ((isdigit(line[i]) || line[i] == '.') && (flagX == 0)) { //проверка на число int/float
             int decimalCount = 0;//счётчик точки 
@@ -257,9 +284,6 @@ double* parsExpression(char* line) { //Парсинг выражения
             i--;
             createMonom(&monomsStack, operandglobal, power);
             flagX = 0;
-            if (power + 1 > maxDegree){
-                maxDegree = power + 1;
-            }
         }
         else if(flagX == 1 && line[i] == 'x' && !isdigit(line[i-1])){
             int power = 0 ;
@@ -275,9 +299,6 @@ double* parsExpression(char* line) { //Парсинг выражения
             i--;
             createMonom(&monomsStack, 1, power);
             flagX = 0;
-            if (power + 1 > maxDegree){
-                maxDegree = power + 1;
-            } 
         }
         else if (line[i] == ')') { //если закрывается скобка
             while (!isOperandStackEmpty(operatorStack) && operatorStack->operator != '(') {
@@ -285,7 +306,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор ё
 
-                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , &monomsStack); //производим простое вычисление
             }
 
             popOperator(&operatorStack); // Удаление '(' из стека
@@ -296,7 +317,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , &monomsStack); //производим простое вычисление
             }
             appendOperator(&operatorStack, line[i]);
         }
@@ -307,7 +328,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 double* term1 = pop(&monomsStack); // b
                 char opr = popOperator(&operatorStack); // оператор
 
-                performOperation(term1, term2, opr , maxDegree, &monomsStack); //производим простое вычисление
+                performOperation(term1, term2, opr , &monomsStack); //производим простое вычисление
     }
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
@@ -393,13 +414,14 @@ int main() {
     printf("Enter a mathematical expression: ");
     fgets(expression, 100, stdin);
     removeRaz(expression);
+    findMaxDegree(expression);
     
     double* result = parsExpression(expression);
     /*for (int i = 0; i < 200; i++)
     {
         printf("%lf", result[i]);
     } */
-    resultOutput(result, 2 * maxDegree + 1);
+    resultOutput(result, maxDegree * 100);
     free(result);
     return 0;
 }
