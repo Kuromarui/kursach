@@ -36,7 +36,7 @@ void push(struct monomialStack* stack, double* data) {
 
 double* pop(struct monomialStack* stack) {
     if (stack->top == NULL) {
-        fprintf(stderr, "Стек пуст\n");
+        printf("Стек пуст\n");
         return NULL;
     }
 
@@ -53,8 +53,8 @@ double* pop(struct monomialStack* stack) {
 void createMonom(struct monomialStack* stack, double coef, int degree) {
     double* arr = (double*)calloc(sizeof(double) , maxDegree * 50);
     if (arr == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти\n");
-        exit(EXIT_FAILURE);
+        printf("Ошибка выделения памяти");
+        exit(-1);
     }
     arr[degree] = coef;
     push(stack, arr);
@@ -151,11 +151,13 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
             break;
         case '/':
             if (term2[length2] == 0){
+                printf("Деление на ноль");
                 exit(-1);
             }
             for (int i = 0 ; i < length1+1 ; i++){
                 if (term1[i] != 0){
                     if (i - length2 < 0){
+                        printf("Отрицательная степень");
                         exit(-1);
                     }
                     else{
@@ -167,7 +169,7 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
             break;
         default:
             printf("неправильное действие");
-            exit(EXIT_FAILURE);
+            exit(-1);
     } 
     free(term1);
     free(term2);
@@ -196,7 +198,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                     i++;
                     if (decimalCount > 1) {
                         printf("Неправильное выражение");
-                        exit(EXIT_FAILURE);
+                        exit(-1);
                     }
                 }
 
@@ -211,8 +213,8 @@ double* parsExpression(char* line) { //Парсинг выражения
             
             else if (line[i + 1] == 'x' && line[i+2] == '^'){
                 if (!isdigit(line[i+3])){
-                    fprintf(stderr, "Неправильное выражение");
-                    exit(EXIT_FAILURE);  
+                    printf("Неправильное выражение");
+                    exit(-1);  
                 }
                 else{
                     flagX = 1;
@@ -226,6 +228,21 @@ double* parsExpression(char* line) { //Парсинг выражения
             else if(line[i+1] != 'x'){
                 createMonom(&monomsStack, operandglobal, 0);
             }
+        }
+        else if (isalpha(line[i])){
+            if (line[i] != 'x'){
+                printf("Введите x а не другой оператор");
+                exit(-1);
+            }
+            else{
+                if (!isdigit(line[i-1]) && line[i+1] != '^'){
+                    createMonom(&monomsStack, 1, 1);
+                }
+                else if(!isdigit(line[i-1]) && line[i+1] == '^'){
+                    flagX = 1;
+                }
+            }
+
         }
         else if(flagX == 1 && isdigit(line[i])){
             int power = 0 ;
@@ -244,7 +261,24 @@ double* parsExpression(char* line) { //Парсинг выражения
                 maxDegree = power + 1;
             }
         }
-        
+        else if(flagX == 1 && line[i] == 'x' && !isdigit(line[i-1])){
+            int power = 0 ;
+            while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
+                if (line[i] == '.') { // проверка на многоточность 
+                    printf("Некорректное число");
+                    exit(-1);
+                }
+
+                power = power * 10 + (line[i] - '0'); // сборка числа
+                i++;
+            }
+            i--;
+            createMonom(&monomsStack, 1, power);
+            flagX = 0;
+            if (power + 1 > maxDegree){
+                maxDegree = power + 1;
+            } 
+        }
         else if (line[i] == ')') { //если закрывается скобка
             while (!isOperandStackEmpty(operatorStack) && operatorStack->operator != '(') {
                 double* term2 = pop(&monomsStack); //достаём a
@@ -354,11 +388,11 @@ int main() {
     return 0; */
 
     //char expression[5] = "1x*2x";
-    //char expression[100];
-    char expression[3]= {"2+2"};
-    //printf("Enter a mathematical expression: ");
-    //fgets(expression, 100, stdin);
-    //removeRaz(expression);
+    char expression[100];
+    //char expression[3]= {"2-3"};
+    printf("Enter a mathematical expression: ");
+    fgets(expression, 100, stdin);
+    removeRaz(expression);
     
     double* result = parsExpression(expression);
     /*for (int i = 0; i < 200; i++)
