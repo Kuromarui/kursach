@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <math.h>
 
-
+int maxDegree = 2;
 struct Node {
     double* data;           
     struct Node* next;    
@@ -51,7 +51,7 @@ double* pop(struct monomialStack* stack) {
 }
 
 void createMonom(struct monomialStack* stack, double coef, int degree) {
-    double* arr = (double*)calloc(sizeof(double) , (degree + 2) * (degree + 2));
+    double* arr = (double*)calloc(sizeof(double) , maxDegree * 50);
     if (arr == NULL) {
         fprintf(stderr, "Ошибка выделения памяти\n");
         exit(EXIT_FAILURE);
@@ -116,14 +116,14 @@ int getPriority(char operator) { //Получение приоритетов
 void performOperation(double* term1, double* term2, char operator, int Degree,  struct monomialStack* stack) { //базовые мат операции 
     double* result = (double*)calloc(sizeof(double) , (Degree * Degree + 1));
     int length1, length2;
-     for (int i = Degree * Degree; i > 0; i-- ){
-        if ((term1[i] != 0 )&& (term1[i] != -0)){
+     for (int i = Degree * Degree +1; i != -1; i-- ){
+        if (term1[i] != 0 ){
             length1 = i;
             break;
         }
     }
-    for (int i= Degree * Degree; i > 0; i-- ){
-        if (term2[i]!= 0 && term2[i] != -0){
+    for (int i= Degree * Degree +1; i != -1; i-- ){
+        if (term2[i]!= 0){
             length2 = i;
             break;
         }
@@ -150,35 +150,20 @@ void performOperation(double* term1, double* term2, char operator, int Degree,  
             push(stack, result);
             break;
         case '/':
-            if (length2 == 0 && term2[0] == 0) {
-                printf("Ошибка: деление на ноль");
-                exit(EXIT_FAILURE);
+            if (term2[length2] == 0){
+                exit(-1);
             }
-            
-            if (length1 < length2) {
-                printf("Ошибка: степень делителя больше делимого");
-                exit(EXIT_FAILURE);
-            }
-            
-            double* quotient = (double*)calloc(sizeof(double), Degree + 1);
-            double* remainder = (double*)calloc(sizeof(double), Degree + 1);
-            
-            for (int i = length1; i >= length2; i--) {
-                int power = i - length2;
-                double coefficient = term1[i] / term2[length2];
-                quotient[power] = coefficient;
-                
-                for (int j = 0; j <= length2; j++) {
-                    term1[i - j] -= coefficient * term2[length2 - j];
+            for (int i = 0 ; i < length1+1 ; i++){
+                if (term1[i] != 0){
+                    if (i - length2 < 0){
+                        exit(-1);
+                    }
+                    else{
+                        result[i - length2] = term1[i] / term2[length2];
+                    }
                 }
             }
-            
-            for (int i = 0; i <= length1; i++) {
-                remainder[i] = term1[i];
-            }
-            
-            push(stack, quotient);
-            push(stack, remainder);
+            push(stack, result);
             break;
         default:
             printf("неправильное действие");
@@ -192,7 +177,6 @@ double* parsExpression(char* line) { //Парсинг выражения
     struct monomialStack monomsStack; 
     operatorStack* operatorStack = NULL;
     int i;
-    int maxDegree = 2;
     int flagX = 0; 
     double operandglobal = 0;
     for (i = 0; i < strlen(line); i++) { //Основной цикл 
@@ -370,18 +354,18 @@ int main() {
     return 0; */
 
     //char expression[5] = "1x*2x";
-    char expression[100];
-
-    printf("Enter a mathematical expression: ");
-    fgets(expression, 100, stdin);
-    removeRaz(expression);
+    //char expression[100];
+    char expression[3]= {"2+2"};
+    //printf("Enter a mathematical expression: ");
+    //fgets(expression, 100, stdin);
+    //removeRaz(expression);
     
     double* result = parsExpression(expression);
     /*for (int i = 0; i < 200; i++)
     {
         printf("%lf", result[i]);
     } */
-    resultOutput(result, 10);
+    resultOutput(result, 2 * maxDegree + 1);
     free(result);
     return 0;
 }
