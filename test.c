@@ -96,6 +96,10 @@ bool isOperator(char ch) { //Проверка на оператор
     return ch == '+' || ch == '-' || ch == '*' || ch == '/';
 }
 
+bool isAlert(char ch){
+    return ch == '!' || ch == '@' || ch == '#' || ch == '$' || ch == '%' || ch == '&' || ch == '_' || ch == '=' || ch == '|' || ch == '<' || ch == '>' || ch == '?' || ch == ';' || ch == ':' || ch == '\'' || ch == '\"' || ch == '\\' || ch == '\{' || ch == '\[' || ch == '}' || ch == ']';
+}
+
 bool isRaz(char ch) { //проверка на раздел 
     return ch == ' ' || ch == '\t' || ch == '\n';
 }
@@ -184,7 +188,7 @@ void findMaxDegree(char* line){
         else if(flag == true && isdigit(line[i])){
             int power = 0 ;
             while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
-                if (line[i] == '.') { // проверка на многоточность 
+                if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
                     exit(-1);
                 }
 
@@ -204,8 +208,14 @@ double* parsExpression(char* line) { //Парсинг выражения
     int i;
     int flagX = 0; 
     double operandglobal = 0;
+    if (line[0] == '-'){
+        printf("Пожалуйста введите первым положительное значение");
+        exit(-1);
+    }
     for (i = 0; i < strlen(line); i++) { //Основной цикл 
-
+        if(line[i] == '+' && i == 0){
+            continue;
+        }
         if (line[i] == ' ') // при пробеле парсим дальше
             continue;
         else if (line[i] == '(') { //при скобке добавляем её в стек операторов
@@ -215,12 +225,12 @@ double* parsExpression(char* line) { //Парсинг выражения
                 exit(-1);
             }
         }
-        else if ((isdigit(line[i]) || line[i] == '.') && (flagX == 0)) { //проверка на число int/float
+        else if ((isdigit(line[i]) || line[i] == '.' || line[i] == ',') && (flagX == 0)) { //проверка на число int/float
             int decimalCount = 0;//счётчик точки 
             double operand = 0; //число
-            
-            while ((i < strlen(line)) && (isdigit(line[i]) || line[i] == '.')) { //цикл сборки
-                if (line[i] == '.') { // проверка на многоточность 
+            int afterpointNumbers = 0;
+            while ((i < strlen(line)) && (isdigit(line[i]) || line[i] == '.' || line[i] == ',' )) { //цикл сборки
+                if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
                     decimalCount++;
                     i++;
                     if (decimalCount > 1) {
@@ -228,17 +238,18 @@ double* parsExpression(char* line) { //Парсинг выражения
                         exit(-1);
                     }
                 }
-
+                afterpointNumbers++;
                 operand = operand * 10 + (line[i] - '0'); // сборка числа
                 i++;
             }
 
             i--; // шаг назад 
             operandglobal = operand;
-            if (decimalCount == 1) // сборка при float 
-                operandglobal /= pow(10, decimalCount);
+            if (decimalCount == 1){ // сборка при float 
+                operandglobal /= pow(10, afterpointNumbers -1);
+            }
             
-            else if (line[i + 1] == 'x' && line[i+2] == '^'){
+            if (line[i + 1] == 'x' && line[i+2] == '^'){
                 if (!isdigit(line[i+3])){
                     printf("Неправильное выражение");
                     exit(-1);  
@@ -271,10 +282,18 @@ double* parsExpression(char* line) { //Парсинг выражения
             }
 
         }
+        else if(line[i] == '^' && line[i-1] != 'x'){
+            printf("Возведение чисел в степень не поддерживается");
+            exit(-1);
+        }
+        else if(isAlert(line[i])){
+            printf("Недопустимый символ");
+            exit(-1);
+        }
         else if(flagX == 1 && isdigit(line[i])){
             int power = 0 ;
             while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
-                if (line[i] == '.') { // проверка на многоточность 
+                if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
                     exit(-1);
                 }
 
@@ -288,7 +307,7 @@ double* parsExpression(char* line) { //Парсинг выражения
         else if(flagX == 1 && line[i] == 'x' && !isdigit(line[i-1])){
             int power = 0 ;
             while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
-                if (line[i] == '.') { // проверка на многоточность 
+                if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
                     printf("Некорректное число");
                     exit(-1);
                 }
@@ -312,6 +331,10 @@ double* parsExpression(char* line) { //Парсинг выражения
             popOperator(&operatorStack); // Удаление '(' из стека
         }
         else if (isOperator(line[i])) {//при нахождении оператора
+            if(isOperator(line[i+1])){
+                printf("Двойной оператор");
+                exit(-1);
+            }
             while (!isOperandStackEmpty(operatorStack) && getPriority(line[i]) <= getPriority(operatorStack->operator)) { //если приоритет меньше верхушки стека
                 double* term2 = pop(&monomsStack); //достаём a
                 double* term1 = pop(&monomsStack); // b
@@ -387,40 +410,17 @@ void removeRaz(char* str) {
 
 // Пример использования
 int main() {
-    /*struct monomialStack stack;
-    operatorStack* operatorsStack = NULL;
-    initStack(&stack);
-    createMonom(&stack, 2, 5);
-    createMonom(&stack, 6, 3);
 
-    // Извлекаем массивы из стека и выводим их
-    double* poppedArr1 = pop(&stack);
-    appendOperator(&operatorsStack, '*'); 
-    double* poppedArr2 = pop(&stack);
-    char operators = popOperator(&operatorsStack);
-    performOperation(poppedArr1, poppedArr2, operators, 9, &stack);
-    double* result = pop(&stack);
-    for (int i = 0 ; i < 50 ; i++){
-        printf("%lf ", result[i]);
-    }
-    int degree = maxDegree(result);
-    printf("%d ", degree);
-    free(result);
-    return 0; */
-
-    //char expression[5] = "1x*2x";
     char expression[100];
-    //char expression[3]= {"2-3"};
+    //char expression[7] = {"2.2+2.2"};
     printf("Enter a mathematical expression: ");
     fgets(expression, 100, stdin);
+    
     removeRaz(expression);
     findMaxDegree(expression);
     
     double* result = parsExpression(expression);
-    /*for (int i = 0; i < 200; i++)
-    {
-        printf("%lf", result[i]);
-    } */
+
     resultOutput(result, maxDegree * 100);
     free(result);
     return 0;
