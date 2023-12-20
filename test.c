@@ -5,26 +5,26 @@
 #include <ctype.h>
 #include <math.h>
 
-int maxDegree = 2;
-struct Node {
+int maxDegree = 2; //Максимальная степень в выражении
+struct Node { //структура списка операторов 
     double* data;           
     struct Node* next;    
 };
 
-struct monomialStack {
+struct monomialStack { //структура стека на списке Node
     struct Node* top;   
 };
 
-void initStack(struct monomialStack* stack) {
+void initStack(struct monomialStack* stack) { // инициализация стека
     stack->top = NULL;
 }
 
-void push(struct monomialStack* stack, double* data) {
+void push(struct monomialStack* stack, double* data) { //добавление массива в стек
 
     struct Node* newNode = (struct Node*)calloc(sizeof(struct Node), 1);
     if (newNode == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти");
-        exit(EXIT_FAILURE);
+        printf("Ошибка выделения памяти");
+        exit(-1);
     }
 
     newNode->data = data;
@@ -34,7 +34,7 @@ void push(struct monomialStack* stack, double* data) {
 }
 
 
-double* pop(struct monomialStack* stack) {
+double* pop(struct monomialStack* stack) { //извлечение массива из стека
     if (stack->top == NULL) {
         printf("Стек пуст\n");
         return NULL;
@@ -50,7 +50,7 @@ double* pop(struct monomialStack* stack) {
 
 }
 
-void createMonom(struct monomialStack* stack, double coef, int degree) {
+void createMonom(struct monomialStack* stack, double coef, int degree) { //инициализация монома в виде массива
     double* arr = (double*)calloc(sizeof(double) , maxDegree * 100 + 1);
     if (arr == NULL) {
         printf("Ошибка выделения памяти");
@@ -60,12 +60,12 @@ void createMonom(struct monomialStack* stack, double coef, int degree) {
     push(stack, arr);
 }
 
-typedef struct operatorStack{ 
+typedef struct operatorStack{ //структура стека оператора
     char operator; 
     struct operatorStack* next;
 } operatorStack;
 
-void appendOperator(operatorStack** head, char operator) {
+void appendOperator(operatorStack** head, char operator) { //добавление оператора в стек
     operatorStack* stack = (operatorStack*)malloc(sizeof(operatorStack));
     if (stack == NULL) {
         exit(-1);
@@ -75,7 +75,7 @@ void appendOperator(operatorStack** head, char operator) {
     *head = stack;
 }
 
-char popOperator(operatorStack** head) {
+char popOperator(operatorStack** head) { //достать оператор с верхушки стека
     if (*head == NULL) { 
         exit(-1);
     }
@@ -87,7 +87,7 @@ char popOperator(operatorStack** head) {
 }
 
 
-bool isOperandStackEmpty(operatorStack* head) {
+bool isOperandStackEmpty(operatorStack* head) { //проверка стека на пустоту
     return head == NULL;
 }
 
@@ -96,7 +96,7 @@ bool isOperator(char ch) { //Проверка на оператор
     return ch == '+' || ch == '-' || ch == '*' || ch == '/';
 }
 
-bool isAlert(char ch){
+bool isAlert(char ch){ //проверка на запрещённый символ
     return ch == '!' || ch == '@' || ch == '#' || ch == '$' || ch == '%' || ch == '&' || ch == '_' || ch == '=' || ch == '|' || ch == '<' || ch == '>' || ch == '?' || ch == ';' || ch == ':' || ch == '\'' || ch == '\"' || ch == '\\' || ch == '\{' || ch == '\[' || ch == '}' || ch == ']';
 }
 
@@ -119,7 +119,7 @@ int getPriority(char operator) { //Получение приоритетов
 
 void performOperation(double* term1, double* term2, char operator, struct monomialStack* stack) { //базовые мат операции 
     double* result = (double*)calloc(sizeof(double) , maxDegree * 100 + 1);
-    int length1, length2;
+    int length1 = 0, length2 = 0, monoCounter = 0;
     for (int i = maxDegree * 100 + 1; i != -1; i-- ){
         if (term1[i] != 0 ){
             length1 = i;
@@ -158,6 +158,15 @@ void performOperation(double* term1, double* term2, char operator, struct monomi
                 printf("Деление на ноль");
                 exit(-1);
             }
+            for (int i = 0 ; i < maxDegree * 100 + 1; i++){ //цикл поиска многочлена
+                if (term2[i] != 0){
+                    monoCounter++;
+                }
+            }
+            if (monoCounter > 1){ //проверка деления на многочлен 
+                printf("Деление на многочлен не поддерживается");
+                exit(-1);
+            }
             for (int i = 0 ; i < length1+1 ; i++){
                 if (term1[i] != 0){
                     if (i - length2 < 0){
@@ -179,7 +188,7 @@ void performOperation(double* term1, double* term2, char operator, struct monomi
     free(term2);
 }
 
-void findMaxDegree(char* line){
+void findMaxDegree(char* line){ //поиск максимальной степени в введёном выражении
     bool flag = false;
     for (int i = 0 ; i < strlen(line); i++){
         if (line[i] == '^'){
@@ -220,15 +229,11 @@ double* parsExpression(char* line) { //Парсинг выражения
             continue;
         else if (line[i] == '(') { //при скобке добавляем её в стек операторов
             appendOperator(&operatorStack, line[i]);
-            if(line[i-1] == '/'){
-                printf("Деление на многочлен");
-                exit(-1);
-            }
         }
         else if ((isdigit(line[i]) || line[i] == '.' || line[i] == ',') && (flagX == 0)) { //проверка на число int/float
             int decimalCount = 0;//счётчик точки 
             double operand = 0; //число
-            int afterpointNumbers = 0;
+            int afterpointNumbers = 0; //счётчик количества символов после точки
             while ((i < strlen(line)) && (isdigit(line[i]) || line[i] == '.' || line[i] == ',' )) { //цикл сборки
                 if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
                     decimalCount++;
@@ -238,7 +243,9 @@ double* parsExpression(char* line) { //Парсинг выражения
                         exit(-1);
                     }
                 }
-                afterpointNumbers++;
+                if (decimalCount == 1){
+                    afterpointNumbers++;
+                }
                 operand = operand * 10 + (line[i] - '0'); // сборка числа
                 i++;
             }
@@ -246,10 +253,10 @@ double* parsExpression(char* line) { //Парсинг выражения
             i--; // шаг назад 
             operandglobal = operand;
             if (decimalCount == 1){ // сборка при float 
-                operandglobal /= pow(10, afterpointNumbers -1);
+                operandglobal /= pow(10, afterpointNumbers);
             }
             
-            if (line[i + 1] == 'x' && line[i+2] == '^'){
+            if (line[i + 1] == 'x' && line[i+2] == '^'){ // при x^
                 if (!isdigit(line[i+3])){
                     printf("Неправильное выражение");
                     exit(-1);  
@@ -267,7 +274,7 @@ double* parsExpression(char* line) { //Парсинг выражения
                 createMonom(&monomsStack, operandglobal, 0);
             }
         }
-        else if (isalpha(line[i])){
+        else if (isalpha(line[i])){ // проверка на другой оператор 
             if (line[i] != 'x'){
                 printf("Введите x а не другой оператор");
                 exit(-1);
@@ -278,11 +285,16 @@ double* parsExpression(char* line) { //Парсинг выражения
                 }
                 else if(!isdigit(line[i-1]) && line[i+1] == '^'){
                     flagX = 1;
+                    if (!isdigit(line[i+2])){
+                        printf("Неправильное выражение");
+                        exit(-1);
+                    }
+                    
                 }
             }
 
         }
-        else if(line[i] == '^' && line[i-1] != 'x'){
+        else if(line[i] == '^' && line[i-1] != 'x'){ // ошибка при 2^
             printf("Возведение чисел в степень не поддерживается");
             exit(-1);
         }
@@ -290,7 +302,7 @@ double* parsExpression(char* line) { //Парсинг выражения
             printf("Недопустимый символ");
             exit(-1);
         }
-        else if(flagX == 1 && isdigit(line[i])){
+        else if(flagX == 1 && isdigit(line[i]) && isdigit(line[i-3])){ // при ЧИСЛО x
             int power = 0 ;
             while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
                 if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
@@ -304,7 +316,7 @@ double* parsExpression(char* line) { //Парсинг выражения
             createMonom(&monomsStack, operandglobal, power);
             flagX = 0;
         }
-        else if(flagX == 1 && line[i] == 'x' && !isdigit(line[i-1])){
+        else if(flagX == 1 && isdigit(line[i]) && (!isdigit(line[i-3]) || (i-3<0))){ // при x
             int power = 0 ;
             while (i < strlen(line) && isdigit(line[i])) { //цикл сборки
                 if (line[i] == '.' || line[i] == ',') { // проверка на многоточность 
@@ -320,6 +332,10 @@ double* parsExpression(char* line) { //Парсинг выражения
             flagX = 0;
         }
         else if (line[i] == ')') { //если закрывается скобка
+            if (line[i+1] == '('){
+                printf("Введите оператор между скобками");
+                exit(-1);
+            }
             while (!isOperandStackEmpty(operatorStack) && operatorStack->operator != '(') {
                 double* term2 = pop(&monomsStack); //достаём a
                 double* term1 = pop(&monomsStack); // b
@@ -333,6 +349,10 @@ double* parsExpression(char* line) { //Парсинг выражения
         else if (isOperator(line[i])) {//при нахождении оператора
             if(isOperator(line[i+1])){
                 printf("Двойной оператор");
+                exit(-1);
+            }
+            if (line[i] == '*' && line[i+1] == '0'){
+                printf("Введите выражение без умножения на ноль");
                 exit(-1);
             }
             while (!isOperandStackEmpty(operatorStack) && getPriority(line[i]) <= getPriority(operatorStack->operator)) { //если приоритет меньше верхушки стека
@@ -356,20 +376,25 @@ double* parsExpression(char* line) { //Парсинг выражения
     return pop(&monomsStack); // Возвращаем результат вычисления выражения
 }
 
-void deleteRaz(char line[]){
+void checkBracket(char line[]){ // проверка на парность скобок
+    int inbracket = 0, outbracket =0;
     for (int i = 0 ; i < strlen(line); i++){
-        if (!isRaz(line[i])){
-            line[i] = line[i];
+        if (line[i] =='('){
+            inbracket ++;
         }
-        else{
-            line[i] = line[i-1];
+        else if(line[i] == ')'){
+            outbracket++;
         }
+    }
+    if (inbracket != outbracket){
+        printf("Введите скобки правильно");
+        exit(-1);
     }
 }
 
-void resultOutput(double* polinom, int degree) {
+void resultOutput(double* polinom, int degree) { //вывод полинома
     bool isFirstTerm = true; // флаг для определения первого элемента
-
+    bool nullflag = false; // флаг пустого массива
     for (int i = degree; i >= 0; i--) {
         if (polinom[i] != 0) {
             if (!isFirstTerm) {
@@ -388,16 +413,22 @@ void resultOutput(double* polinom, int degree) {
             double absCoef = fabs(polinom[i]);
             if (i == 0) {
                 printf("%lf ", absCoef);
+                nullflag = true;
             } else if (i == 1) {
                 printf("%lfx ", absCoef);
+                nullflag = true;
             } else {
                 printf("%lfx^%i ", absCoef, i);
+                nullflag = true;
             }
         }
     }
+    if (nullflag == false){
+        printf("0");
+    }
 }
 
-void removeRaz(char* str) {
+void removeRaz(char* str) { //удаление разделителей
     int count = 0;
     for (int i = 0; str[i]; i++) {
         if (!isRaz(str[i])) {
@@ -412,15 +443,20 @@ void removeRaz(char* str) {
 int main() {
 
     char expression[100];
-    //char expression[7] = {"2.2+2.2"};
+    //char expression[5] = {"12x^2"};
     printf("Enter a mathematical expression: ");
     fgets(expression, 100, stdin);
     
     removeRaz(expression);
+    checkBracket(expression);
     findMaxDegree(expression);
+    if (maxDegree > 100000){
+        printf("Слишком большая степень");
+        exit(-1);
+    }
     
     double* result = parsExpression(expression);
-
+    printf("Результат вычислений ");
     resultOutput(result, maxDegree * 100);
     free(result);
     return 0;
