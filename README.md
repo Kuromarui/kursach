@@ -1,0 +1,1 @@
+Simple inline polynome calculator
